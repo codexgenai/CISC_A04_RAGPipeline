@@ -58,13 +58,13 @@ The system follows a modular architecture with clear separation of concerns and 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  Document Input │     │  Text Processing│     │  Embedding Gen. │
-│  (PDF Files)    │ ──> │  & Chunking     │ ──> │  & Storage     │
+│  (PDF Files)    │ ──> │  & Chunking     │ ──> │  & Storage      │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
                                                       │
                                                       ▼
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  Query Input    │     │  Context        │     │  Response      │
-│  (User Query)   │ ──> │  Retrieval      │ ──> │  Generation    │
+│  Query Input    │     │  Context        │     │  Response       │
+│  (User Query)   │ ──> │  Retrieval      │ ──> │  Generation     │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
 ```
 
@@ -127,7 +127,7 @@ The system follows a modular architecture with clear separation of concerns and 
 ```
 ┌─────────────────┐
 │  Config Files   │
-│  (causal/seq2seq)│
+│ (causal/seq2seq)│
 └────────┬────────┘
          │
          ▼
@@ -163,10 +163,11 @@ The system follows a modular architecture with clear separation of concerns and 
 
 ## Prerequisites
 
-- Python 3.8+
+- Python 3.11+
 - PyTorch
 - Transformers
 - ChromaDB
+- accelerate for HF accelerated generation
 - PDF processing libraries
 - Other dependencies listed in requirements.txt
 
@@ -229,6 +230,12 @@ python main.py step04_retrieve_chunks --query_args "<query>" --model_type <causa
 5. **Response Generation**:
 ```bash
 python main.py step05_generate_response --query_args "<query>" --use_rag --model_type <causal|seq2seq>
+```
+
+### Tests
+Run tests using the below code
+```bash
+python -m unittest discover tests
 ```
 
 ### Example Usage
@@ -309,9 +316,6 @@ The project includes:
 4. Push to the branch
 5. Create a Pull Request
 
-## License
-
-[Specify License]
 
 ## Acknowledgments
 
