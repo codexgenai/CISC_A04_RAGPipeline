@@ -1,0 +1,14 @@
+{
+    "raw_input_directory": "data/raw_input",
+    "cleaned_text_directory": "data/cleaned_text",
+    "embeddings_directory": "data/embeddings",
+    "vectordb_directory": "data/vectordb",
+    "collection_name": "documents",
+    "embedding_model_name": "sentence-transformers/all-MiniLM-L6-v2",
+    "llm_model_name": "facebook/opt-350m",
+    "llm_api_url": "https://api-inference.huggingface.co/models/facebook/opt-350m",
+    "retriever_min_score_threshold": "0.5",
+    "log_level": "INFO",
+    "model_type": "causal",
+    "prompt_template": "Based on the following context, please answer the question. If the context doesn't contain relevant information, say so.\n\nContext: {context}\n\nQuestion: {question}\n\nAnswer:"
+} 

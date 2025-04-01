@@ -3,6 +3,7 @@ from sentence_transformers import SentenceTransformer
 from typing import Dict, List, Any
 from pathlib import Path
 import logging
+import torch
 
 class ChromaDBRetriever:
     """Retrieves relevant documents from ChromaDB based on a search phrase."""
@@ -15,7 +16,12 @@ class ChromaDBRetriever:
         self.vectordb_path = Path(vectordb_dir)
         self.client = chromadb.PersistentClient(path=str(self.vectordb_path))
         self.collection = self.client.get_or_create_collection(name=collection_name)
+        
+        # Initialize embedding model with float32 precision
         self.embedding_model = SentenceTransformer(embedding_model_name)
+        self.embedding_model.to(torch.device("cpu"))
+        self.embedding_model.eval()
+        
         self.score_threshold = score_threshold  # Minimum similarity score for valid results
 
         self.logger = logging.getLogger(__name__)
@@ -23,7 +29,9 @@ class ChromaDBRetriever:
 
     def embed_text(self, text: str) -> List[float]:
         """Generates an embedding vector for the input text."""
-        return self.embedding_model.encode(text, normalize_embeddings=True).tolist()
+        with torch.no_grad():
+            embeddings = self.embedding_model.encode(text, normalize_embeddings=True)
+            return embeddings.tolist()
 
     def extract_context(self, full_text: str, search_str: str) -> str:
         """

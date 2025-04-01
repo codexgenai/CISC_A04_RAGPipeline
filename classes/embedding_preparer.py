@@ -15,16 +15,21 @@ class EmbeddingPreparer:
         self.input_dir = Path(input_dir)
         self.output_dir = Path(output_dir)
         self.embedding_model_name = embedding_model_name
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")  # Force CPU usage
 
         # Ensure output directory exists
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         self.logger = logging.getLogger(__name__)
 
-        # Load model and tokenizer
+        # Load model and tokenizer with float32 precision for CPU
         self.tokenizer = AutoTokenizer.from_pretrained(self.embedding_model_name)
-        self.model = AutoModel.from_pretrained(self.embedding_model_name).to(self.device)
+        self.model = AutoModel.from_pretrained(
+            self.embedding_model_name,
+            torch_dtype=torch.float32,
+            low_cpu_mem_usage=True
+        ).to(self.device)
+        self.model.eval()  # Set to evaluation mode
 
     def process_files(self):
         save_log_level = logging.getLogger().getEffectiveLevel()
@@ -50,16 +55,32 @@ class EmbeddingPreparer:
             return f.read().strip()
 
     def _generate_embedding(self, text):
-        inputs = self.tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512).to(
-            self.device)
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-        return outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy().tolist()
+        """Generate embedding for the given text."""
+        try:
+            # Tokenize and prepare input
+            inputs = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+            # Generate embeddings
+            with torch.no_grad():
+                outputs = self.model(**inputs)
+                # Use CLS token embedding (first token)
+                embeddings = outputs.last_hidden_state[:, 0, :].cpu().numpy()
+
+            return embeddings[0].tolist()  # Convert to list for JSON serialization
+        except Exception as e:
+            self.logger.error(f"Error generating embedding: {e}")
+            raise
 
     def _save_embedding(self, file_path, embedding):
-        output_file = self.output_dir / f"{file_path.stem}_embeddings.json"
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(embedding, f)  # Save list of floats
-        self.logger.info(f"Saved embeddings to {output_file}")
+        """Save embedding to a JSON file."""
+        try:
+            output_file = self.output_dir / f"{file_path.stem}_embeddings.json"
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump({"embedding": embedding}, f)
+            self.logger.info(f"Saved embeddings to {output_file}")
+        except Exception as e:
+            self.logger.error(f"Error saving embedding: {e}")
+            raise
 
 
